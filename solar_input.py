@@ -58,6 +58,7 @@ def parse_star_parameters(line, star):
     star.Vx = float(Vx)
     star.Vy = float(Vy)
 
+
 def parse_planet_parameters(line, planet):
     """Считывает данные о планете из строки.
     Предполагается такая строка:
@@ -117,6 +118,7 @@ def write_space_objects_data_to_file(output_filename, space_objects):
                                                               obj.Vy))
             # FIXME: should store real values
 
+
 def save_statistics(space_objects):
     """Сохраняет данные о космических объектах в файл.
     Строки должны иметь следующий формат:
@@ -151,15 +153,9 @@ def save_statistics(space_objects):
 
 
 def clear_statistics():
+    """Функция, стирающая статистику (вызывается при новом запуске)"""
     with open("stats.txt", 'w') as out_file:
         out_file.write("")
-
-def make_point(obj, t, ax_v, ax_r, ax_vr):
-    r = (obj.x**2 + obj.y**2)**0.5
-    v =  (obj.Vx**2 + obj.Vy**2)**0.5
-    ax_r.scatter(t, r, color="red", s=1)
-    ax_v.scatter(t,v, color="red", s=1)
-    ax_vr.scatter(r,v, color="red", s=1)
 
 
 if __name__ == "__main__":

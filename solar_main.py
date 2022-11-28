@@ -16,15 +16,60 @@ physical_time = 0
 Тип: float"""
 
 displayed_time = None
-"""Отображаемое на экране время.
+"""Отображаемое на экране время
 Тип: переменная tkinter"""
 
 time_step = None
-"""Шаг по времени при моделировании.
+"""Шаг по времени при моделировании
 Тип: float"""
 
 space_objects = []
-"""Список космических объектов."""
+"""Список космических объектов"""
+
+ax_v = ax_r = ax_vr = None
+"""Subplots графиков движения спутника или None, если он не моделируется"""
+
+
+def get_satellite():
+    """Функция, проверяющая моделируется ли спутник и возвращающая объект спутника или None, если он не моделиркется"""
+    global space_objects
+    if len(space_objects) == 2:
+        if space_objects[0].type == space_objects[1].type == 'star':
+            return None
+        elif space_objects[0].type == 'star' and space_objects[1].type == 'planet':
+            return space_objects[1]
+        else:
+            return space_objects[0]
+
+
+def graph():
+    """Функция, создающая графики"""
+    global ax_v, ax_r, ax_vr
+
+    ax_v.set_xlabel(r"$t$, с")
+    ax_v.set_ylabel(r"$V, м/с$")
+
+    ax_r.set_xlabel(r"$t$, с")
+    ax_r.set_ylabel(r"$r, м$")
+
+    ax_vr.set_xlabel(r"$r, м$")
+    ax_vr.set_ylabel(r"$V, м/с$")
+
+    ax_r.grid(which='major', color='k')
+    ax_v.grid(which='major', color='k')
+    ax_vr.grid(which='major', color='k')
+
+    plt.show()
+
+
+def make_point(obj, t):
+    """Функция создающая точки, по которым строятся графики"""
+    global ax_v, ax_r, ax_vr
+    r = (obj.x**2 + obj.y**2)**0.5
+    v = (obj.Vx**2 + obj.Vy**2)**0.5
+    ax_r.scatter(t, r, color="red", s=1)
+    ax_v.scatter(t, v, color="red", s=1)
+    ax_vr.scatter(r, v, color="red", s=1)
 
 
 def execution():
@@ -41,11 +86,11 @@ def execution():
     physical_time += time_step.get()
     displayed_time.set("%.1f" % physical_time + " seconds gone")
     save_statistics(space_objects)
-    if is_one_satellite:
-        make_point(satellite, physical_time, ax_v, ax_r, ax_vr)
-
     if perform_execution:
         space.after(101 - int(time_speed.get()), execution)
+
+    if get_satellite():
+        make_point(get_satellite(), physical_time)
 
 
 def start_execution():
@@ -69,8 +114,8 @@ def stop_execution():
     start_button['text'] = "Start"
     start_button['command'] = start_execution
     print('Paused execution.')
-    if is_one_satellite:
-        plt.show()
+    if get_satellite():
+        graph()
 
 
 def open_file_dialog():
@@ -80,8 +125,7 @@ def open_file_dialog():
     """
     global space_objects
     global perform_execution
-    global is_one_satellite
-    global satellite
+    global ax_v, ax_r, ax_vr
 
     perform_execution = False
     for obj in space_objects:
@@ -91,45 +135,6 @@ def open_file_dialog():
     max_distance = max([max(abs(obj.x), abs(obj.y)) for obj in space_objects])
     calculate_scale_factor(max_distance)
 
-
-
-    is_one_satellite = False
-    sattelite = None
-    condition1 = len(space_objects) == 2
-    condition2 = False
-    if condition1:
-        first_two = [space_objects[0].type, space_objects[1].type]
-        if "planet" == first_two[0]:
-            satellite = space_objects[0]
-            condition2 = True
-        elif "planet" == first_two[1]:
-            satellite = space_objects[1]
-            condition2 = True
-        if condition2:
-            if "star" in first_two:
-                is_one_satellite = True
-                global ax_v, ax_r, ax_vr
-
-                ax_v = plt.subplot(311)
-                ax_r = plt.subplot(312)
-                ax_vr = plt.subplot(313)
-
-                ax_v.set_xlabel(r"$t$, с")
-                ax_v.set_ylabel(r"$V, м/с$")
-
-                ax_r.set_xlabel(r"$t$, с")
-                ax_r.set_ylabel(r"$r, м$")
-
-                ax_vr.set_xlabel(r"$r, м$")
-                ax_vr.set_ylabel(r"$V, м/с$")
-
-                ax_r.grid(which='major',
-                         color='k')
-
-                ax_v.grid(which='major',color = 'k')
-
-                ax_vr.grid(which='major',color = 'k')
-
     for obj in space_objects:
         if obj.type == 'star':
             create_star_image(space, obj)
@@ -137,6 +142,11 @@ def open_file_dialog():
             create_planet_image(space, obj)
         else:
             raise AssertionError()
+
+    if get_satellite():
+        ax_v = plt.subplot(311)
+        ax_r = plt.subplot(312)
+        ax_vr = plt.subplot(313)
 
 
 def save_file_dialog():
@@ -195,6 +205,7 @@ def main():
 
     root.mainloop()
     print('Modelling finished!')
+
 
 if __name__ == "__main__":
     main()
